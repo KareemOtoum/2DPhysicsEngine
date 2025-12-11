@@ -3,6 +3,8 @@
 #include "visuals/Visuals.hpp"
 #include "core/Transform.hpp"
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 // Shader sources live in the .cpp to avoid multiple definition problems
 static const char* vertexShaderSource = R"(
@@ -169,11 +171,13 @@ void Visuals::drawRigidBody(RigidBody& body){
 
 // Render Loop 
 void Visuals::renderLoop(World& world){
-    
-    float last = glfwGetTime();
+
+    int frameRate=120; // 120 fps desired 
+    float lastTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
 
+        double frameStart = glfwGetTime();
         // Basic input
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
 
@@ -205,10 +209,26 @@ void Visuals::renderLoop(World& world){
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        float now = glfwGetTime();
-        float dt = now - last;
-        last = now;
-        world.step(dt); 
+       
+           // --- PHYSICS STEP ---
+
+        // Option A: use *actual* dt (variable timestep)
+        double now = glfwGetTime();
+        double dt = now - lastTime;
+        lastTime = now;
+        world.step(static_cast<float>(dt));
+
+        // Option B (if you want fixed timestep): 
+        // world.step(static_cast<float>(targetFrameTime));
+
+        // --- FRAME LIMITING TO 120 FPS ---
+        double frameEnd = glfwGetTime();
+        double frameDuration = frameEnd - frameStart;
+        double sleepTime = (1/frameRate) - frameDuration;
+
+        if (sleepTime > 0.0) {
+            std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+        }
         
     }
 

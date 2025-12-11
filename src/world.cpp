@@ -4,14 +4,41 @@
 #include "core/RigidBody.hpp"
 #include "math/Math.hpp"
 #include "core/Transform.hpp"
+#include "collision/AABB.hpp"
 #include <cmath>
 #include <iostream>
+
+
+void broadPhase(std::vector<RigidBody>& m_bodies){ // Establish which objects are likely to be colliding 
+
+    // First do an AABB test
+    for (size_t i = 0; i < m_bodies.size(); ++i) {
+        for (size_t j = i + 1; j < m_bodies.size(); ++j) {
+    
+            RigidBody& A=m_bodies[i];
+            RigidBody& B=m_bodies[j];
+
+            physEng::worldSpace(A);
+            physEng::worldSpace(B);
+
+            AABB A_AABB=getAABB(A);
+            AABB B_AABB=getAABB(B);
+
+            if (AABBintersection(A_AABB,B_AABB)){
+                // Move onto narrow phase 
+                resolvePair(A,B);
+            }
+        }
+    }
+    
+}
 
 void World::step(float dt){ // Called each frame
 
     for (auto& body : m_bodies){
         if (!body.isStatic){
 
+            // Integrator using dt ( Time between consecutive frames ) 
             body.linearAcceleration = gravity;
             body.linearVelocity += body.linearAcceleration * dt;
             body.position += body.linearVelocity * dt;
@@ -19,17 +46,11 @@ void World::step(float dt){ // Called each frame
 
             body.force = Vec2(0, 0);
 
-
         }
 
     }
 
-    for (size_t i = 0; i < m_bodies.size(); ++i) {
-        for (size_t j = i + 1; j < m_bodies.size(); ++j) {
-            resolvePair(m_bodies[i], m_bodies[j]);
-        }
-    }
-
+    broadPhase(m_bodies);
 
 }
 
@@ -38,12 +59,6 @@ struct impulseManifold{
     Vec2 rA;
     Vec2 rB;
 };
-
-
-static inline Vec2 tangentialVelocity(float w, const Vec2& r) {
-    // ω (about z) crossed with r = (-ω * r.y, ω * r.x)
-    return Vec2(-w * r.y, w * r.x);
-}
 
 void resolveCollision(Manifold& manifold){
 
@@ -114,18 +129,14 @@ void resolveCollision(Manifold& manifold){
 void resolvePair(RigidBody& A, RigidBody& B){ 
     // Check if Body A and B are colliding, if so resolve their
 
-    physEng::worldSpace(A);
-    physEng::worldSpace(B);
-
     Manifold m = SATCollision(A, B);
     if (!m.inCollision) return; // Two objects are not colliding
 
     // Positional correction
-    const float percent=1.00;;
-    const float slop=0.000005f;
+    const float percent = 0.4f; 
+    const float slop = 0.01f;
 
-    float invMassSum = A.inverseMass+B.inverseMass;
-
+    float invMassSum = A.inverseMass+B.inverseMass; // Zero implies two static bodies
     if (invMassSum > 0.f){ 
         // Positional correction if two objects are colliding and one is non-static based on penetration depth 
         float corrMag = std::max(m.penetration - slop, 0.f) / invMassSum * percent;
@@ -137,3 +148,4 @@ void resolvePair(RigidBody& A, RigidBody& B){
     resolveCollision(m); // Collision solver 
 
 }
+

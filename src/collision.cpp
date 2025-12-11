@@ -173,6 +173,10 @@ Manifold SATCollision(RigidBody& RigidBodyA,RigidBody& RigidBodyB) {
         DebugDraw::drawContactSegment(contactData.contact1, contactData.contact2);
     }
 
+    if (vecMath::dot(normal, RigidBodyB.position - RigidBodyA.position) < 0.0f) {
+        normal = normal*-1;  // Ensure the normal always points from a to b to avoid merging objects 
+    }
+
     Manifold manifold{ // Build a manifold to describe the outcome 
         RigidBodyA,
         RigidBodyB,

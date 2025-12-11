@@ -1,7 +1,6 @@
 
 #pragma once
 #include "core/Vector2.hpp"
-#include "core/Polygon.hpp"
 #include <vector>
 
 
