@@ -138,7 +138,6 @@ bool SATLoop(const RigidBody& A,const RigidBody& B,float& penetration,Vec2& norm
 
     // --- 
   
-
     std::vector<Vec2> verticesA=A.transformedVertices;
     std::vector<Vec2> verticesB=B.transformedVertices;
 

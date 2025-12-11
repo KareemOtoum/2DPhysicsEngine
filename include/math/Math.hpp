@@ -5,7 +5,7 @@
 #include "core/Vector2.hpp"
 #include <cmath>
 
-namespace vecMath{
+namespace vecMath{ // Just to avoid potential conflict issues 
 
     inline float pi=3.141592653589793;
 
@@ -51,28 +51,29 @@ namespace vecMath{
 
     inline float pointSegmentDistance(const Vec2& a,const Vec2& b,const Vec2& p,Vec2& contactValue){
 
-    Vec2 ab = (b - a); // segment AB
-    Vec2 ap = (p - a); // from A to P 
+        Vec2 ab = (b - a); // segment AB
+        Vec2 ap = (p - a); // from A to P 
 
-    float abLengthSquared = lengthSquared(ab);
-    if (abLengthSquared <= 0.0f) {
-        contactValue = a;
-        return distanceSquared(p, a);
+        float abLengthSquared = lengthSquared(ab);
+        if (abLengthSquared <= 0.0f) {
+            contactValue = a;
+            return distanceSquared(p, a);
+        }
+
+        float t = dot(ap, ab) / abLengthSquared;
+
+        Vec2 contact;
+        if (t <= 0.0f){
+            contact = a;
+        } else if (t >= 1.0f){
+            contact = b;
+        } else { 
+            contact = a + ab * t;
+        }
+
+        contactValue = contact;
+        return distanceSquared(p, contact);
+
     }
 
-    float t = dot(ap, ab) / abLengthSquared;
-
-    Vec2 contact;
-    if (t <= 0.0f){
-        contact = a;
-    } else if (t >= 1.0f){
-        contact = b;
-    } else { 
-        contact = a + ab * t;
-    }
-
-    contactValue = contact;
-    return distanceSquared(p, contact);
-}
-
-}
+} // namespace vecMath

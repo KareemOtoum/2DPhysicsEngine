@@ -4,6 +4,46 @@
 #include "core/RigidBody.hpp"
 #include "core/Vector2.hpp"
 
+void setBoxVertices(RigidBody& body, float width, float height){
+
+    // -- 
+    // Generic function to set the vertices for a box of custom width and height 
+    // param body - RigidBody to set vertices for 
+    // param width - Width of box 
+    // param height - Height of box 
+    // -- 
+
+    float hw = width  * 0.5f;
+    float hh = height * 0.5f;
+
+    // Local-space vertices ccw
+    body.vertices.clear();
+    body.vertices.reserve(4);
+
+    body.vertices.push_back(Vec2(-hw, -hh));
+    body.vertices.push_back(Vec2( hw, -hh));
+    body.vertices.push_back(Vec2( hw,  hh));
+    body.vertices.push_back(Vec2(-hw,  hh));
+
+    // Compute world-space vertices immediately
+    body.transformedVertices.clear();
+    body.transformedVertices.reserve(4);
+
+    float c = std::cos(body.rotation);
+    float s = std::sin(body.rotation);
+
+    for (const Vec2& v : body.vertices){
+        Vec2 rotated(
+            v.x * c - v.y * s,
+            v.x * s + v.y * c
+        );
+        // Translate into world space
+        body.transformedVertices.push_back(body.position + rotated);
+    }
+
+}
+
+
 std::vector<Vec2> generateRegularPolygon(int n, float r){
 
     // ---
@@ -29,6 +69,7 @@ std::vector<Vec2> generateRegularPolygon(int n, float r){
     }
 
     return verts;
+
 }
 
 float computeRegularPolygonInertia(int n, float m, float r){ 
@@ -41,7 +82,7 @@ float computeRegularPolygonInertia(int n, float m, float r){
     // -- 
 
     if (n < 3 || m <= 0.0f) return 0.0f; // Either an invalid polygon or a static object 
-    float n = static_cast<float>(n);
+    n = static_cast<float>(n);
     float angle = 2.0f * M_PI / n;
     float I = (m * r * r / 12.0f) * (3.0f + std::cos(angle));
     return I;
@@ -62,13 +103,13 @@ float computeInverseMass(float mass, bool isStatic){
 
 }
 
-RigidBody::RigidBody(int n,float r,float m) : sides(n), radius(r), mass(mass) {
+RigidBody::RigidBody(int n,float r,float m) : sides(n), radius(r), mass(m) {
 
     // ---
     // Constructs an n sided Polygon RigidBody of radius r and mass m
     // param n - Sides
     // param r- Radius
-    // param m - Mass
+    // param m - mass
     // -- 
 
     vertices=generateRegularPolygon(n,r);
