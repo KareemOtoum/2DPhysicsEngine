@@ -33,9 +33,17 @@ int main(){
     RigidBody t3(4,1.0,2.0);
     t3.snapTo(Vec2(0.0f, -2.0f));   
     t3.rotate(1.5708*1.5);      
-    t3.restitution=0.9f;
+    t3.restitution=0.0f;
     t3.linearVelocity=Vec2(0.0f,0.0f);
     world.getBodies().push_back(t3);
+
+    RigidBody t4(4,1.0,2.0);
+    t4.snapTo(Vec2(0.0f, 0.0f));   
+    t4.rotate(1.5708*1.2);      
+    t4.restitution=0.0f;
+    t4.linearVelocity=Vec2(0.0f,0.0f);
+    world.getBodies().push_back(t4);
+
 
     // Main loop
     gfx.renderLoop(world);
