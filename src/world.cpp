@@ -7,49 +7,52 @@
 #include "math/Math.hpp"
 #include "core/Transform.hpp"
 #include "collision/AABB.hpp"
+#include "collision/Partioning.hpp"
 #include <cmath>
 #include <iostream>
 
 void broadPhase(std::vector<RigidBody>& bodies){ 
     
     // Broad-phase collision detection.
-    // - Generates candidate pairs using AABB overlap (O(n^2) currently).
-    // - For each candidate pair, calls narrowPhase(A,B) which may modify velocities/positions.
+    // - Generates close candidate pairs (i,j) using AABBS and spatial partioning, where i and j are close in world-space.
+    // - For each candidate pair, it is ensured their AABB overlaps, in which the narrow phase is then called for the candidate pair. 
     // Preconditions:
     // - A.transformedVertices / B.transformedVertices are rebuilt here via physEng::worldSpace().
-    // Thread-safety: not thread-safe.
+    // Thread-safety: not thread-safe, run from physics thread only.
 
-    // First do an AABB test
-    for (size_t i = 0; i < bodies.size(); ++i) {
-        for (size_t j = i + 1; j < bodies.size(); ++j) {
+    std::vector<AABB> aabbs;
+    aabbs.reserve(bodies.size()); 
 
-            RigidBody& A=bodies[i];
-            RigidBody& B=bodies[j];
-
-            if (A.isStatic && B.isStatic) continue; // No point in evaluating two static bodies         
-
-            physEng::worldSpace(A);
-            physEng::worldSpace(B);
-
-            // Define each bodies' AABB bounding box 
-            AABB A_AABB=getAABB(A);
-            AABB B_AABB=getAABB(B);
-
-            if (AABBintersection(A_AABB,B_AABB)){ // If the AABB boxes intersect move onto the next stage 
-                // Move onto narrow phase, implement partioning later on
-                narrowPhase(A,B); // Enter the narrow phase now that we've discerned these two bodies are likely colliding
-            }
-
-        }
+    for (auto& body : bodies){
+        physEng::worldSpace(body); // Update each body from it's local space vertices to world space 
+        AABB box=getAABB(body); // Construct it's AABB
+        aabbs.push_back(box);
     }
-    
+
+    partioning::GridConfig gridConfig;
+    auto pairs = partioning::buildPairsFromAABBs(aabbs, gridConfig); // Get canditate pairs which are close to each other in world-space 
+
+    for (auto [i,j] : pairs) { // Go through each canditate pair, i.e. i and j are close 
+       
+        RigidBody& A = bodies[i];
+        RigidBody& B = bodies[j];
+
+        if (A.isStatic && B.isStatic) continue;
+
+        // Do a final cheap check to ensure their AABBS are overlapping before running an SAT test 
+        if (!AABBintersection(aabbs[i], aabbs[j])) continue;
+        // At this point, it is very likely they are in collision, so we can run expensive SAT tests
+        narrowPhase(A, B);
+
+    }
+
 }
 
 void World::step(float dt){ 
 
     // Advances the simulation by dt seconds.
     // Order: integrate forces -> integrate velocities/positions -> detect/resove collisions.
-    // Preconditions:
+    // Assumed:
     // - dt > 0
     // Postconditions:
     // - Body transforms updated and caches invalidated (body.update = true on transform change).

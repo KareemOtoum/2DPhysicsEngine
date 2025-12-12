@@ -23,7 +23,6 @@ struct ContactCandidate {
 
 contactResult getContactPoints(const RigidBody& A, const RigidBody& B) {
 
-
     // Computes up to two contact points between two colliding convex polygons
     // using point-to-edge distance candidates.
     // Preconditions: A/B transformedVertices are up-to-date and non-empty.
