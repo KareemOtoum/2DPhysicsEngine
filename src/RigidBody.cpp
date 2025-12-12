@@ -6,12 +6,9 @@
 
 void setBoxVertices(RigidBody& body, float width, float height){
 
-    // -- 
-    // Generic function to set the vertices for a box of custom width and height 
-    // param body - RigidBody to set vertices for 
-    // param width - Width of box 
-    // param height - Height of box 
-    // -- 
+    // Sets local-space vertices for an axis-aligned box (centered at COM).
+    // Rebuilds transformedVertices immediately using the body's current position/rotation.
+    // Effects: overwrites body.vertices and body.transformedVertices.
 
     float hw = width  * 0.5f;
     float hh = height * 0.5f;
@@ -45,13 +42,11 @@ void setBoxVertices(RigidBody& body, float width, float height){
 
 
 std::vector<Vec2> generateRegularPolygon(int n, float r){
+        
+    // Generates local-space vertices for a regular n-gon of radius r (centered at origin).
+    // Returns vertices in CCW order (suitable for SAT / outward normals).
+    // Preconditions: n >= 3, r > 0.
 
-    // ---
-    // Creates an n-sided Polygon, of radius r which winds clockwise.
-    // param n - Sides
-    // param r - Radius
-    // -- 
-    
     std::vector<Vec2> verts;
     if (n < 3) return verts;
     verts.reserve(n);
@@ -74,12 +69,9 @@ std::vector<Vec2> generateRegularPolygon(int n, float r){
 
 float computeRegularPolygonInertia(int n, float m, float r){ 
 
-    // ---
-    // Computes the inertia for an n sided Polygon of radius r and mass m
-    // param n - Sides
-    // param m - mass
-    // param r - radius 
-    // -- 
+    // Computes moment of inertia about the COM for a solid regular n-gon (approx/closed-form).
+    // Returns 0 for invalid input or non-dynamic bodies (m <= 0 or n < 3).
+    // Units: inertia in (mass * length^2).
 
     if (n < 3 || m <= 0.0f) return 0.0f; // Either an invalid polygon or a static object 
     n = static_cast<float>(n);
@@ -105,12 +97,9 @@ float computeInverseMass(float mass, bool isStatic){
 
 RigidBody::RigidBody(int n,float r,float m) : sides(n), radius(r), mass(m) {
 
-    // ---
-    // Constructs an n sided Polygon RigidBody of radius r and mass m
-    // param n - Sides
-    // param r- Radius
-    // param m - mass
-    // -- 
+    // RigidBody constructor
+    // Sets inverse mass for impulse math. Static bodies and non-positive masses return 0.
+    // Avoids division by zero and encodes immovable bodies via invMass = 0.
 
     vertices=generateRegularPolygon(n,r);
     inertia=computeRegularPolygonInertia(n,m,r);

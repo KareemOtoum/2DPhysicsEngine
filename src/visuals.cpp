@@ -38,13 +38,11 @@ void main() {
 
 Visuals::Visuals(){
 
-    // -- 
-    // Initialises required OpenGL objects before the main render loop is called 
-    // -- 
+    // Constructor which initialises required OpenGL objects before the main render loop is called 
 
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
-        ok = false;
+        m_ok = false;
         return;
     }
 
@@ -55,26 +53,26 @@ Visuals::Visuals(){
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    window = glfwCreateWindow(winWidth, winHeight, "Physics Engine", nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create window\n";
+    m_window = glfwCreateWindow(m_winWidth, m_winHeight, "Physics Engine", nullptr, nullptr);
+    if (!m_window) {
+        std::cerr << "Failed to create m_window\n";
         glfwTerminate();
-        ok = false;
+        m_ok = false;
         return;
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(m_window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
-        ok = false;
+        m_ok = false;
         return;
     }
 
     // Query actual framebuffer size (important on Retina / HiDPI)
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    glViewport(0, 0, fbWidth, fbHeight);
+    int m_fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_window, &m_fbWidth, &fbHeight);
+    glViewport(0, 0, m_fbWidth, fbHeight);
 
     // Compile shaders
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -85,71 +83,64 @@ Visuals::Visuals(){
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
 
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    m_shaderProgram = glCreateProgram();
+    glAttachShader(m_shaderProgram, vertexShader);
+    glAttachShader(m_shaderProgram, fragmentShader);
+    glLinkProgram(m_shaderProgram);
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    glUseProgram(shaderProgram);
+    glUseProgram(m_shaderProgram);
 
     // Uniform locations
-    colourLoc = glGetUniformLocation(shaderProgram, "uColor");
-    aspectLoc = glGetUniformLocation(shaderProgram, "uAspect");
-    zoomLoc   = glGetUniformLocation(shaderProgram, "uZoom");
+    m_colourLoc = glGetUniformLocation(m_shaderProgram, "uColor");
+    m_aspectLoc = glGetUniformLocation(m_shaderProgram, "uAspect");
+    m_zoomLoc   = glGetUniformLocation(m_shaderProgram, "uZoom");
 
     // Create VAO/VBO once
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo);
 
-    ok = true;
+    m_ok = true;
 
 }
 
 Visuals::~Visuals(){
 
-    // ---
     // Deconstructor used for when the window is being closed 
-    // -- 
 
-    if (vao != 0) glDeleteVertexArrays(1, &vao);
-    if (vbo != 0) glDeleteBuffers(1, &vbo);
-    if (shaderProgram != 0) glDeleteProgram(shaderProgram);
+    if (m_vao != 0) glDeleteVertexArrays(1, &m_vao);
+    if (m_vbo != 0) glDeleteBuffers(1, &m_vbo);
+    if (m_shaderProgram != 0) glDeleteProgram(m_shaderProgram);
 
-    if (window) {
-        glfwDestroyWindow(window);
+    if (m_window) {
+        glfwDestroyWindow(m_window);
         glfwTerminate();
     }
 
 }
 
-void Visuals::drawRigidBody(RigidBody& body){
+void Visuals::drawRigidBody(const RigidBody& body){
 
-    // -- 
-    // Renders a RigidBody to the screen
-    // param body - The rigid body to render 
-
-    // This is assuming that transformedVertices has already been calculated ( Of which it has been in the world step loop )
-
-    // - 
+    // Draws a single rigid body using the active shader and geometry buffers.
+    // Assumes the body's world-space vertices are up-to-date.
+    // Body is const, does not modify physics state.
    
-    if (!ok) return;
+    if (!m_ok) return;
 
     // Handle framebuffer size each frame
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    glViewport(0, 0, fbWidth, fbHeight);
-    float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+    glfwGetFramebufferSize(m_window, &m_fbWidth, &m_fbHeight);
+    glViewport(0, 0, m_fbWidth, m_fbHeight);
+    float aspect = static_cast<float>(m_fbWidth) / static_cast<float>(m_fbHeight);
 
-    glUseProgram(shaderProgram);
-    glUniform1f(aspectLoc, aspect);
-    glUniform1f(zoomLoc,   zoom);
+    glUseProgram(m_shaderProgram);
+    glUniform1f(m_aspectLoc, aspect);
+    glUniform1f(m_zoomLoc,   m_zoom);
 
     // Flatten world-space vertices into a float buffer
     std::vector<float> buffer;
     buffer.reserve(body.transformedVertices.size() * 2);
-
-    physEng::worldSpace(body);
+    
     for (const Vec2& v : body.transformedVertices) {
         buffer.push_back(v.x);
         buffer.push_back(v.y);
@@ -157,14 +148,14 @@ void Visuals::drawRigidBody(RigidBody& body){
 
     // Set colour for this body
     glUniform3f(
-        colourLoc,
+        m_colourLoc,
         body.colour.r,
         body.colour.g,
         body.colour.b
     );
 
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
     glBufferData(
         GL_ARRAY_BUFFER,
@@ -191,47 +182,47 @@ void Visuals::drawRigidBody(RigidBody& body){
 
 void Visuals::renderLoop(World& world){
 
-    // -- 
-    // The main render loop, rendering all Rigid Bodies each frame and calling the world step function
-    // param world - The world object describing the physics world 
-    // -- 
+    // Main render loop.
+    // Handles input, renders all rigid bodies, and advances the physics simulation each frame.
+    // Runs until the window is closed and attempts to cap the frame rate.
+    // Must be called from the thread that owns the OpenGL context ( main.cpp with current setup).
 
     int frameRate=120; // 120 fps desired 
     float lastTime = glfwGetTime();
 
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(m_window)) {
 
         double frameStart = glfwGetTime();
 
         // Basic input
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+        if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(m_window, true);
 
         // Zoom controls: Q to zoom in, E to zoom out
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            zoom *= 1.01f; // Zooms in
+        if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
+            m_zoom *= 1.01f; // Zooms in
         }
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            zoom /= 1.01f; // Zooms out
+        if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
+            m_zoom /= 1.01f; // Zooms out
         }
 
-        // Handle framebuffer size changes (retina / window resize)
-        glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-        glViewport(0, 0, fbWidth, fbHeight);
-        float aspect = static_cast<float>(fbWidth) / static_cast<float>(fbHeight);
+        // Handle framebuffer size changes (retina / m_window resize)
+        glfwGetFramebufferSize(m_window, &m_fbWidth, &m_fbHeight);
+        glViewport(0, 0, m_fbWidth, m_fbHeight);
+        float aspect = static_cast<float>(m_fbWidth) / static_cast<float>(m_fbHeight);
 
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-        glUniform1f(aspectLoc, aspect);
-        glUniform1f(zoomLoc, zoom);
+        glUseProgram(m_shaderProgram);
+        glUniform1f(m_aspectLoc, aspect);
+        glUniform1f(m_zoomLoc, m_zoom);
 
         // Draw each rigid body in the world  
         for (auto& body:world.getBodies()){
             drawRigidBody(body);
         }
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(m_window);
         glfwPollEvents();
 
         double now = glfwGetTime();
@@ -251,9 +242,9 @@ void Visuals::renderLoop(World& world){
         
     }
 
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
-    glDeleteProgram(shaderProgram);
+    glDeleteVertexArrays(1, &m_vao);
+    glDeleteBuffers(1, &m_vbo);
+    glDeleteProgram(m_shaderProgram);
     glfwTerminate();
 
 };

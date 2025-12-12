@@ -1,5 +1,21 @@
 // World.hpp, created by Andrew Gossen.
-// Establishes the World class, which encompasses the entire physics world holding all bodies.
+
+// -----
+// Owns and simulates all rigid bodies in the physics world.
+//
+// Ownership & Lifetime:
+// - World owns all RigidBody instances stored in m_bodies.
+// - Bodies are stored by value for cache-friendly iteration.
+// - References/pointers to elements may be invalidated if m_bodies
+//   reallocates (e.g., when adding/removing bodies).
+//
+// Simulation Contract:
+// - step(dt) advances the simulation by dt seconds.
+//
+// Thread Safety:
+// - World is NOT thread-safe.
+// - All access must occur from the physics thread.
+// -------
 
 #pragma once
 #include "core/RigidBody.hpp"
@@ -8,14 +24,15 @@
 class World{ 
 
     public:
-    Vec2 getGravity() const{ return gravity; }
+    Vec2 getGravity() const{ return gravity; } 
     std::vector<RigidBody>& getBodies() { return m_bodies; } // Return rigid bodies in the world 
-    void step(float dt);
+    void step(float dt); // Step function for the world, called after each frame is rendered 
 
     private:
-    std::vector<RigidBody> m_bodies; // All rigid bodies, static and non-static, in the world
-    Vec2 gravity{0.0f,-9.81f};
+    std::vector<RigidBody> m_bodies; // All rigid bodies, static and non-static, in the world ( Of which the world takes ownership)
+    Vec2 gravity{0.0f,-9.81f}; 
 
 };
 
-void narrowPhase(RigidBody& A,RigidBody& B); // The narrow phase for collision checking, defined in world.cpp
+// The narrow phase for collision checking, using an expensive but definitive SAT test.
+void narrowPhase(RigidBody& A,RigidBody& B); 

@@ -45,7 +45,7 @@ namespace vecMath{ // Just to avoid potential conflict issues
         return std::abs(a-b) < (1e-3);  // Half mm precision 
     }
 
-    inline bool vecCloselyEqual(Vec2& a, Vec2&b){
+    inline bool vecCloselyEqual(const Vec2& a, const Vec2&b){
         return (floatCloselyEqual(a.x,b.x) && floatCloselyEqual(a.y,b.y));
     }
 

@@ -1,6 +1,28 @@
 
 // RigidBody.h, created by Andrew Gossen.
-// Holds the struct to define a RigidBody, and holds some functions defined in RigidBody.cpp 
+
+// ---
+// Defines a physics data object representing a single rigid body.
+//
+// Ownership & Lifetime:
+// - All RigidBody instances are owned by the World class.
+// - RigidBody does not own external resources.
+// - Dynamic memory usage is limited to internal STL containers,
+//   which are managed via RAII.
+//
+// Invariants:
+// - vertices are defined in local space relative to the body's COM.
+// - position and rotation define the authoritative world transform.
+// - transformedVertices are cached world-space vertices derived
+//   from vertices, position, and rotation.
+// - If update == true, transformedVertices MUST be recalculated
+//   to reflect the body's world space ( before they are accessed ).
+//
+// Thread Safety:
+// - RigidBody is NOT thread-safe.
+// - Instances must only be accessed and mutated from a single thread
+//   (the physics simulation thread).
+// --
 
 #pragma once
 #include "core/Vector2.hpp"

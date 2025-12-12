@@ -1,6 +1,14 @@
 
 // Transform.hpp, created by Andrew Gossen.
-// Used for transformation calculations, ultimately to convert the local vertices to world-space.
+
+// ------
+// Utility type for 2D rigid transforms (rotation + translation).
+// Used to convert points from local space ( relative to Polygon's COM ) to world space.
+// 
+// Notes:
+// - This is a lightweight value type (NO ownership).
+// - Rotation is in radians.
+// ------
 
 #pragma once 
 #include "Vector2.hpp"
@@ -12,22 +20,21 @@ struct Transform{
     float rotation{0.0f}; // Transform measured in radians  
 
     Transform()=default;
-    explicit Transform(const Vec2& position,float rotation) : position(position), rotation(rotation) {}
+    Transform(const Vec2& position,float rotation) : position(position), rotation(rotation) {}
 
-    void Translate(const Vec2& translation){ // Changes this transform's position 
+    // Changes this transform's position 
+    void Translate(const Vec2& translation){ 
         position.x+=translation.x;
         position.y+=translation.y;
     }
 
-    void rotate(float translation){ // Changes this Transform's rotation 
+     // Changes this Transform's rotation 
+    void rotate(float translation){
         rotation+=translation; 
     }
 
+    // Applies this transform to a local-space point, returning world-space.
     Vec2 applyTransform(const Vec2& p) const { 
-        // -- 
-        // Applies a transformation to position p
-        // param p - Vector 2 position
-        // -- 
         float c=std::cos(rotation);
         float s=std::sin(rotation);
         Vec2 rotated(
@@ -45,7 +52,7 @@ namespace physEng{
 
         // -- 
         // This is used to update a RigidBody's vertices from local space ( relative to it's com ) to world space ( Using the x-y world co-ordinate system)
-        // param body - RigidBody to update vertices from local space to world space for 
+        // param body - RigidBody to update vertices from local space to world space for, ( DOES NOT TAKE OWNERSHIP ) 
         // -- 
 
         if (!body.update && !body.transformedVertices.empty()) return;
@@ -58,6 +65,8 @@ namespace physEng{
         for (const Vec2& local : body.vertices) {
             body.transformedVertices.push_back(t.applyTransform(local));
         }
+
+        body.update = false; // Set cache update to false as the transformed vertices are up to date 
         
     }
 

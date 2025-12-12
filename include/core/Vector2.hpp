@@ -1,54 +1,79 @@
 
 // Vector2.h, created by Andrew Gossen.
-// Establishes the Vector2 object, used to store Vector values with two components such as speed, acceleration, position.
+
+// ----- 
+// Lightweight vector2 value type.
+//
+// Usage:
+// - Represents positions, velocities, accelerations, forces, etc.
+// - This is a pure value type: no ownership, and no dynamic allocation.
+//
+// Notes:
+// - All operations are inline  and cheap.
+// - Equality is exact floating-point comparison (see notes below).
+// -----
 
 #pragma once
 #include <cmath>
 
-struct Vec2{ // Defines a vector2 object 
+struct Vec2{ 
 
     float x{0.0f};
     float y{0.0f};
     Vec2()=default;
     Vec2(float x,float y) : x(x), y(y) {}
 
-    // Create operators for easy manipulation later on 
-    
+    // Vector addition
     Vec2 operator +(const Vec2& otherVector) const { // Add this vector with another 
         return Vec2(x+otherVector.x,y+otherVector.y);
     } 
-    Vec2 operator -(const Vec2& otherVector) const { // Subtract this vector with another 
+
+    // Vector subtraction
+    Vec2 operator -(const Vec2& otherVector) const { 
         return Vec2(x-otherVector.x,y-otherVector.y);
     } 
-    Vec2 operator *(float scalar) const { // Scalar multiplier 
+
+    // Scalar multiplier 
+    Vec2 operator *(float scalar) const { 
         return Vec2(x*scalar,y*scalar);
     }
-    Vec2 operator /(float scalar) const { // Scalar division 
+     // Scalar division
+    Vec2 operator /(float scalar) const {
         return Vec2(x/scalar,y/scalar);
     }
+
+    // Compound addition 
     Vec2& operator +=(const Vec2& otherVector) { 
         x+=otherVector.x; y+=otherVector.y;
         return *this;
     };
+
+    // Compound subtraction
     Vec2& operator -=(const Vec2& otherVector) { 
         x-=otherVector.x; y-=otherVector.y;
         return *this;
     };
-    Vec2& operator *=(const Vec2& otherVector) { 
-        x*=otherVector.x; y*=otherVector.y;
-        return *this;
-    };
 
-    bool operator ==(const Vec2& otherVector) const { // Check whether this vector and otherVector are equivelant
+    // Compound multiplication
+    Vec2& operator*=(float scalar) {
+        x *= scalar;
+        y *= scalar;
+        return *this;
+    }
+
+    // Check whether this vector and otherVector are equivalent, won't be used for physics calculations due to floating point precision 
+    bool operator ==(const Vec2& otherVector) const { 
         return ( (x==otherVector.x) && (y==otherVector.y )); 
     }
 
-    float getLength() const{
+    // Get magnitude of this vector 
+    float length() const{
         return std::sqrt(x*x + y*y);
     }
 
-    Vec2 normalise() const{ // Get unit vector and avoid division by zero
-        float len=getLength();
+    // Get unit vector and avoid division by zero
+    Vec2 normalise() const{ 
+        float len=length();
         if (len > 1e-6f) {
             return Vec2{x / len, y / len};
         }

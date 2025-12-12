@@ -1,5 +1,23 @@
-// Visuals.hpp, created by Andrew Gossen.
-// Handles all OpenGL visuals to keep main.cpp tidier.
+// Visuals.hpp
+
+// ------------------------------------------------------------
+// OpenGL/GLFW rendering wrapper for the physics engine.
+//
+// Ownership & Lifetime:
+// - Visuals owns the GLFWwindow and OpenGL resources (shader, VAO, VBO).
+// - Resources are acquired in the constructor and released in the destructor.
+// - Copying is disabled to prevent double-free of GL resources.
+// - (Optional) Moving may be enabled if needed.
+//
+// Usage Contract:
+// - renderLoop() assumes a valid GL context on the calling thread.
+// - All methods must be called from the same thread that owns the GL context
+//   (GLFW/OpenGL are generally not thread-safe across contexts).
+//
+// Error Handling:
+// - If initialization fails, isValid() returns false and window/resources
+//   may be null/zero.
+// ------------------------------------------------------------
 
 #pragma once
 #include "core/RigidBody.hpp"
@@ -9,43 +27,47 @@
 
 class Visuals {
 
-    public:
+public:
+    Visuals();
+    ~Visuals();
 
-    Visuals();  
-    ~Visuals();  
+    Visuals(const Visuals&) = delete;
+    Visuals& operator=(const Visuals&) = delete;
 
-    bool isValid() const { return ok; }
+    // If you want move support, implement it carefully in the .cpp:
+    // Visuals(Visuals&&) noexcept;
+    // Visuals& operator=(Visuals&&) noexcept;
 
-    // Draw a single rigid body using internal VAO/VBO + shader
-    void drawRigidBody(RigidBody& body);
-    // The actual render loop running each frame. 
+    bool isValid() const { return m_ok; }
+
+    // Draws a single rigid body using internal VAO/VBO + shader.
+    // Does not modify physics state.
+    void drawRigidBody(const RigidBody& body);
+
+    // Runs the render loop. Blocks until the window closes.
     void renderLoop(World& world);
-    // Getters
-    GLFWwindow* getWindow() const { return window; }
-    // Setters
-    void setZoom(float z) { zoom = z; }
-    float& getZoom() { return zoom; }
 
-    private:
+    GLFWwindow* window() const { return m_window; }
 
-    // Window / GL context
-    GLFWwindow* window = nullptr;
+    void setZoom(float z) { m_zoom = z; }
+    float zoom() const { return m_zoom; }
 
-    int winWidth  = 800;
-    int winHeight = 600;
-    int fbWidth, fbHeight;
+private:
+    GLFWwindow* m_window = nullptr;
 
-    // Shader program and uniforms
-    GLuint shaderProgram = 0;
-    GLint  colourLoc = -1;
-    GLint  aspectLoc = -1;
-    GLint  zoomLoc   = -1;
+    int m_winWidth  = 800;
+    int m_winHeight = 600;
+    int m_fbWidth   = 0;
+    int m_fbHeight  = 0;
 
-    // Geometry buffers
-    GLuint vao = 0;
-    GLuint vbo = 0;
+    GLuint m_shaderProgram = 0;
+    GLint  m_colourLoc     = -1;
+    GLint  m_aspectLoc     = -1;
+    GLint  m_zoomLoc       = -1;
 
-    float zoom = 0.07f;  
-    bool ok = false;    
+    GLuint m_vao = 0;
+    GLuint m_vbo = 0;
 
+    float m_zoom = 0.07f;
+    bool  m_ok   = false;
 };

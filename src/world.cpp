@@ -10,38 +10,36 @@
 #include <cmath>
 #include <iostream>
 
-
-void broadPhase(std::vector<RigidBody>& m_bodies){ 
+void broadPhase(std::vector<RigidBody>& bodies){ 
     
-    // -- 
-    // This is the broad phase, where we want to know what objects are likely to be colliding
-    // The concept is to first use AABB and partioning to discern objects likely to be in collision
-    // We then only apply the SAT to objects likely to be colliding
-    // This is to avoid running unnecessary code on two bodies in which it is apparent they're not in collision
-
-    // param m_bodies - private member of the world, storing all RigidBodies in the world.
-    // -- 
+    // Broad-phase collision detection.
+    // - Generates candidate pairs using AABB overlap (O(n^2) currently).
+    // - For each candidate pair, calls narrowPhase(A,B) which may modify velocities/positions.
+    // Preconditions:
+    // - A.transformedVertices / B.transformedVertices are rebuilt here via physEng::worldSpace().
+    // Thread-safety: not thread-safe.
 
     // First do an AABB test
-    for (size_t i = 0; i < m_bodies.size(); ++i) {
-        for (size_t j = i + 1; j < m_bodies.size(); ++j) {
+    for (size_t i = 0; i < bodies.size(); ++i) {
+        for (size_t j = i + 1; j < bodies.size(); ++j) {
 
-            RigidBody& A=m_bodies[i];
-            RigidBody& B=m_bodies[j];
+            RigidBody& A=bodies[i];
+            RigidBody& B=bodies[j];
 
-            if (A.isStatic && B.isStatic) continue; // No point in evaluating two static bodies 
+            if (A.isStatic && B.isStatic) continue; // No point in evaluating two static bodies         
 
-            // Transform each polygon's local space vertex's into world space 
             physEng::worldSpace(A);
             physEng::worldSpace(B);
+
             // Define each bodies' AABB bounding box 
             AABB A_AABB=getAABB(A);
             AABB B_AABB=getAABB(B);
 
             if (AABBintersection(A_AABB,B_AABB)){ // If the AABB boxes intersect move onto the next stage 
-                // Move onto narrow phase, implement partioning latero n 
-                narrowPhase(A,B); // This is the narrow phase 
+                // Move onto narrow phase, implement partioning later on
+                narrowPhase(A,B); // Enter the narrow phase now that we've discerned these two bodies are likely colliding
             }
+
         }
     }
     
@@ -49,10 +47,12 @@ void broadPhase(std::vector<RigidBody>& m_bodies){
 
 void World::step(float dt){ 
 
-    // -- 
-    // Step function for the world, called after each frame is rendered
-    // param dt - The elapsed time between consecutive frames 
-    // -- 
+    // Advances the simulation by dt seconds.
+    // Order: integrate forces -> integrate velocities/positions -> detect/resove collisions.
+    // Preconditions:
+    // - dt > 0
+    // Postconditions:
+    // - Body transforms updated and caches invalidated (body.update = true on transform change).
 
     for (auto& body : m_bodies){
         if (!body.isStatic){
@@ -61,9 +61,10 @@ void World::step(float dt){
             body.linearAcceleration = gravity;
             body.linearVelocity += body.linearAcceleration * dt;
             body.position += body.linearVelocity * dt;
-            body.rotation+=body.angularVelocity*dt;
+            body.rotation += body.angularVelocity*dt;
             body.force = Vec2(0, 0); // Going to implement forces later on 
- 
+            body.update = true; // invalidate cached transformedVertices
+
         }
 
     }
@@ -81,15 +82,17 @@ struct impulseManifold{ // Used to store impulses to apply all impulses only onc
 
 void resolveCollision(Manifold& manifold){
 
-    // -- 
-    // Resolves a collision between two objects 
-    // By 'resolving', this means applying appropriate forces such that each object seperates from one another 
-    // param manifold - The collision data gathered from the SAT test, stores contact data and the normal ( pointing from A to B )
-    // -- 
+    // Resolves collision by applying impulses at each contact point.
+    // Preconditions:
+    // - manifold.inCollision == true
+    // - manifold.normal is unit length and points from A -> B
+    // - contactCount in [1,2] and contact points are valid
+    // Effects:
+    // - Modifies A/B linearVelocity and angularVelocity.
 
     RigidBody& A=manifold.A;
     RigidBody& B=manifold.B;
-    Vec2 normal=manifold.normal;
+    const Vec2 normal=manifold.normal;
 
     std::vector<Vec2> contacts;
     contacts.reserve(manifold.contactCount);
@@ -150,11 +153,15 @@ void resolveCollision(Manifold& manifold){
 
 void narrowPhase(RigidBody& A, RigidBody& B){ 
     
-    // --
-    // This is the narrow phase called when it is likely A and B are colliding
-    // param A - A rigid body, that is likely to be colliding with RigidBody B
-    // param B - A rigid body, that is likely to be colliding with RigidBody A 
-    // -- 
+    // Narrow-phase collision detection and resolution for a candidate body pair.
+    //
+    // Preconditions:
+    // - A and B have passed broad-phase testing.
+    // - A.transformedVertices and B.transformedVertices are up-to-date.
+    //
+    // Effects:
+    // - Applies impulse-based collision resolution.
+    // - May modify A/B positions via penetration correction.
 
     Manifold m = SATCollision(A, B); // Apply the SAT test to objectively discern if they are in collision
     if (!m.inCollision) return; // Two objects are not colliding. we can stop here
@@ -171,8 +178,8 @@ void narrowPhase(RigidBody& A, RigidBody& B){
         // Positional correction if two objects are colliding and one is non-static based on penetration depth 
         float corrMag = std::max(m.penetration - slop, 0.f) / invMassSum * percent;
         Vec2 correction = m.normal * corrMag;
-        if (!A.isStatic) A.position -= correction * A.inverseMass;
-        if (!B.isStatic) B.position += correction * B.inverseMass;
+        if (!A.isStatic) { A.position -= correction * A.inverseMass; A.update=true; } // Invalidate cache as position cahnged 
+        if (!B.isStatic) { B.position += correction * B.inverseMass; B.update=true; } 
     }
 
 }
