@@ -8,9 +8,10 @@ TODO (Performance):
 - Add broad-phase partitioning (spatial hash / uniform grid or sweep-and-prune) to reduce O(n^2) pair checks.
 - Add shape-specific collision paths (Circle–Circle, Circle–Polygon, Box–Box) instead of treating everything as generic polygons. This avoids expensive SAT for common cases.
 
+Demo 
+
 https://github.com/user-attachments/assets/12808075-fe2f-4803-b852-b403fb83c422
 
-Demo 
 
 
 
