@@ -180,7 +180,6 @@ void Visuals::drawRigidBody(const RigidBody& body){
 
 }
 
-
 void Visuals::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     
     if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
@@ -211,8 +210,11 @@ void Visuals::mouseButtonCallback(GLFWwindow* window, int button, int action, in
 
     RigidBody body(4, 1.0f, 2.0f);
     body.snapTo(worldPos);
-    body.update = true;                
-    body.colour = Colour{0.0f, 255.0f, 0.0f};
+    body.update = true;       
+    body.rotate(1.5708*1.5f);         
+    body.staticFriction=0.1;
+    body.dynamicFriction=0.05;
+    body.colour = Colour{0.0f, 255.0f, 255.0f};
     body.restitution = 0.2f;
 
     visuals->world.getBodies().push_back(body);

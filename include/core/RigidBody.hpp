@@ -55,8 +55,8 @@ struct RigidBody{
 
     float inertia{0.0f};
     float inverseInertia{0.0f};
-    float staticFriction{0.1f};
-    float dynamicFriction{0.1f};
+    float staticFriction{0.2f};
+    float dynamicFriction{0.7f};
     float density{0.0f}; 
     float mass{0.0f};
     float inverseMass{0.0f};
