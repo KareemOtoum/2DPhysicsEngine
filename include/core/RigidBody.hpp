@@ -44,7 +44,6 @@ struct RigidBody{
     RigidBody()=default;
     RigidBody(int n, float radius,float mass);
 
-
     Vec2 force;
     Vec2 position{0.0f,0.0f};
     float rotation{0.0f}; // Radians
@@ -56,6 +55,8 @@ struct RigidBody{
 
     float inertia{0.0f};
     float inverseInertia{0.0f};
+    float staticFriction{0.1f};
+    float dynamicFriction{0.1f};
     float density{0.0f}; 
     float mass{0.0f};
     float inverseMass{0.0f};

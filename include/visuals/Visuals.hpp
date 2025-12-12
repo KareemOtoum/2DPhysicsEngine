@@ -28,11 +28,14 @@
 class Visuals {
 
 public:
-    Visuals();
+
+    Visuals(World& world);
     ~Visuals();
 
     Visuals(const Visuals&) = delete;
     Visuals& operator=(const Visuals&) = delete;
+    
+    World& world; 
 
     // If you want move support, implement it carefully in the .cpp:
     // Visuals(Visuals&&) noexcept;
@@ -45,14 +48,17 @@ public:
     void drawRigidBody(const RigidBody& body);
 
     // Runs the render loop. Blocks until the window closes.
-    void renderLoop(World& world);
-
+    void renderLoop();
     GLFWwindow* window() const { return m_window; }
 
     void setZoom(float z) { m_zoom = z; }
     float zoom() const { return m_zoom; }
 
 private:
+
+    // Transform the outWorldPos ( A mouse pos ) to world-space, returns success
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
     GLFWwindow* m_window = nullptr;
 
     int m_winWidth  = 800;

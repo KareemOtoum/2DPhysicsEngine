@@ -64,7 +64,7 @@ void World::step(float dt){
             body.linearAcceleration = gravity;
             body.linearVelocity += body.linearAcceleration * dt;
             body.position += body.linearVelocity * dt;
-            body.rotation += body.angularVelocity*dt;
+            body.rotation += body.angularVelocity * dt;
             body.force = Vec2(0, 0); // Going to implement forces later on 
             body.update = true; // invalidate cached transformedVertices
 
@@ -157,6 +157,120 @@ void resolveCollision(Manifold& manifold){
 
 };
 
+void resolveCollisionFriction(Manifold& manifold){
+
+    // Resolves collision by applying impulses at each contact point.
+    // Preconditions:
+    // - manifold.inCollision == true
+    // - manifold.normal is unit length and points from A -> B
+    // - contactCount in [1,2] and contact points are valid
+    // Effects:
+    // - Modifies A/B linearVelocity and angularVelocity.
+
+    RigidBody& A=manifold.A;
+    RigidBody& B=manifold.B;
+    const Vec2 normal=manifold.normal;
+
+    std::vector<Vec2> contacts;
+    contacts.reserve(manifold.contactCount);
+    if (manifold.contactCount >= 1) contacts.push_back(manifold.contact1);
+    if (manifold.contactCount >= 2) contacts.push_back(manifold.contact2);
+
+    std::vector<impulseManifold> impulses;
+
+    impulses.reserve(contacts.size());
+
+    float staticFriction=std::sqrt(A.staticFriction*B.staticFriction);
+    float dynamicFriction=std::sqrt(A.dynamicFriction*B.dynamicFriction);
+
+    for (auto& contact : contacts){ // Create impulse for each contact point 
+
+        Vec2 radiusA=contact-A.position;
+        Vec2 radiusB=contact-B.position;
+
+        // Perpendicular radii
+        Vec2 rA=Vec2(-radiusA.y,radiusA.x);
+        Vec2 rB=Vec2(-radiusB.y,radiusB.x);
+
+        Vec2 AtangentialVelocity=rA*A.angularVelocity;
+        Vec2 BtangentialVelocity=rB*B.angularVelocity;
+
+        Vec2 relativeVel= (
+            (B.linearVelocity+BtangentialVelocity)-
+            (A.linearVelocity+AtangentialVelocity)
+        );
+
+        Vec2 tangent=relativeVel-normal*vecMath::dot(relativeVel,normal);
+        
+        float velAlongNormal = vecMath::dot(relativeVel, manifold.normal);
+        if (velAlongNormal > 0.0f) continue;  // If they are already separating along the normal, so the collision is going to resolve on its own
+
+        bool applyFriction=true;
+        
+        if (vecMath::floatCloselyEqual(tangent.length(),0)){ // Allow box to microsettle ( stay flat once all velocity is lost )
+            applyFriction=false;  
+        } else { 
+            tangent=tangent.normalise();
+        }
+
+        float rADot=vecMath::dot(rA,normal);
+        float rBDot=vecMath::dot(rB,normal);
+        float minRestitiution = std::sqrt(A.restitution*B.restitution); // Variable e 
+
+        float denominator= (A.inverseMass + B.inverseMass + (rADot*rADot)*A.inverseInertia + (rBDot*rBDot)*B.inverseInertia  ); 
+        float j = -(1.0f + minRestitiution) * velAlongNormal;
+        j /= denominator;
+        j /= static_cast<float>(manifold.contactCount);
+
+        // Rotational and linear manifold 
+        Vec2 impulse=manifold.normal*j;
+        impulseManifold rotManifold{impulse,radiusA,radiusB}; 
+        impulses.push_back(rotManifold);
+
+        // Friction manifold 
+        if (applyFriction){
+
+            float rADotTangential=vecMath::dot(rA,tangent);
+            float rBDotTangential=vecMath::dot(rB,tangent);
+
+            float denominatorTangential= (
+                A.inverseMass + B.inverseMass + 
+                (rADotTangential*rADotTangential)*A.inverseInertia + 
+                (rBDotTangential*rBDotTangential)*B.inverseInertia
+            );
+
+            float jTangent = -vecMath::dot(relativeVel, tangent);;
+            jTangent /= denominatorTangential;
+            jTangent /= static_cast<float>(manifold.contactCount);
+
+            Vec2 frictionImpulse;
+
+            if (std::abs(jTangent) <= j*staticFriction){
+                frictionImpulse=tangent*jTangent;
+            } else { 
+                frictionImpulse=tangent*-1*j*dynamicFriction;
+            }
+
+            impulseManifold frictionManifold{frictionImpulse,radiusA,radiusB}; 
+            impulses.push_back(frictionManifold);
+        }
+
+
+    }
+
+    // Apply impulses after impulse for all contact points created 
+    for (auto& impulseData : impulses){
+
+        A.linearVelocity-=impulseData.impulse*A.inverseMass;
+        B.linearVelocity+=impulseData.impulse*B.inverseMass;
+        A.angularVelocity += -vecMath::cross(impulseData.rA, impulseData.impulse) * A.inverseInertia;
+        B.angularVelocity += vecMath::cross(impulseData.rB, impulseData.impulse) * B.inverseInertia;
+    }
+
+
+};
+
+
 void narrowPhase(RigidBody& A, RigidBody& B){ 
     
     // Narrow-phase collision detection and resolution for a candidate body pair.
@@ -172,7 +286,7 @@ void narrowPhase(RigidBody& A, RigidBody& B){
     Manifold m = SATCollision(A, B); // Apply the SAT test to objectively discern if they are in collision
     if (!m.inCollision) return; // Two objects are not colliding. we can stop here
 
-    resolveCollision(m); // At this point, the two objects are colliding, so we must resolve the collision
+    resolveCollisionFriction(m); // At this point, the two objects are colliding, so we must resolve the collision
 
     // Apply position correction afterwards to seperate the two objects.
 

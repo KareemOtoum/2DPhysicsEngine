@@ -36,7 +36,7 @@ void main() {
 }
 )";
 
-Visuals::Visuals(){
+Visuals::Visuals(World& world) : world(world){
 
     // Constructor which initialises required OpenGL objects before the main render loop is called 
 
@@ -180,7 +180,46 @@ void Visuals::drawRigidBody(const RigidBody& body){
 
 }
 
-void Visuals::renderLoop(World& world){
+
+void Visuals::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    
+    if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
+
+    auto* visuals = static_cast<Visuals*>(glfwGetWindowUserPointer(window));
+    if (!visuals) return;
+
+    double sx, sy;
+    glfwGetCursorPos(window, &sx, &sy);
+
+    int winW, winH;
+    glfwGetWindowSize(window, &winW, &winH);
+
+    int fbW, fbH;
+    glfwGetFramebufferSize(window, &fbW, &fbH);
+
+    double sx_fb = sx * (double)fbW / (double)winW;
+    double sy_fb = sy * (double)fbH / (double)winH;
+
+    float xNDC =  2.0f * float(sx_fb) / float(fbW) - 1.0f;
+    float yNDC =  1.0f - 2.0f * float(sy_fb) / float(fbH);
+
+    float aspect = float(fbW) / float(fbH);
+    Vec2 worldPos{
+        xNDC * aspect / visuals->m_zoom,
+        yNDC / visuals->m_zoom
+    };
+
+    RigidBody body(4, 1.0f, 2.0f);
+    body.snapTo(worldPos);
+    body.update = true;                
+    body.colour = Colour{0.0f, 255.0f, 0.0f};
+    body.restitution = 0.2f;
+
+    visuals->world.getBodies().push_back(body);
+
+}
+
+void Visuals::renderLoop(){
 
     // Main render loop.
     // Handles input, renders all rigid bodies, and advances the physics simulation each frame.
@@ -190,10 +229,15 @@ void Visuals::renderLoop(World& world){
     int frameRate=120; // 120 fps desired 
     float lastTime = glfwGetTime();
 
+
+    auto* visuals = static_cast<Visuals*>(glfwGetWindowUserPointer(m_window));
+    glfwSetWindowUserPointer(m_window, this);
+    glfwSetMouseButtonCallback(m_window,mouseButtonCallback);
+
     while (!glfwWindowShouldClose(m_window)) {
 
-        double frameStart = glfwGetTime();
 
+        double frameStart = glfwGetTime();
         // Basic input
         if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(m_window, true);
 
@@ -246,5 +290,6 @@ void Visuals::renderLoop(World& world){
     glDeleteBuffers(1, &m_vbo);
     glDeleteProgram(m_shaderProgram);
     glfwTerminate();
+    glfwPollEvents();
 
 };
