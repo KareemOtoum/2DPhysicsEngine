@@ -1,5 +1,5 @@
 // Partitioning.hpp
-// This is a basic uniform-grid spatial hashing, used to find narrow-phase candidates.
+// This is a basic uniform-grid spatial hashing, used to find candidates close to each other in world-space.
 
 #pragma once
 #include <vector>
@@ -16,12 +16,12 @@ struct GridConfig {
     float cellSize = 2.0f; // Size of each grid cell 
 };
 
-// Packs 2D cell coords into one 64-bit key
+// Packs 2D cell coords into one 64 bit key
 inline uint64_t cellKey(int cx, int cy) {
     return (uint64_t(uint32_t(cx)) << 32) | uint32_t(cy);
 }
 
-// Packs a pair of body indices into a unique 64-bit key
+// Packs a pair of body indices into a unique 64 bit key
 inline uint64_t pairKey(int a, int b) {
     if (a > b) std::swap(a, b);
     return (uint64_t(uint32_t(a)) << 32) | uint32_t(b);
@@ -59,16 +59,16 @@ inline std::vector<std::pair<int,int>> buildPairsFromAABBs(const std::vector<AAB
     // Generate unique pairs within each bucket
     std::unordered_set<uint64_t> seen;
     seen.reserve(aabbs.size() * 8);
-
     std::vector<std::pair<int,int>> pairs;
     pairs.reserve(aabbs.size() * 4);
 
-    for (auto& [key, ids] : buckets) {    // Iterate over each occupied grid cell
+    for (auto& [key, ids] : buckets) {  // Iterate over each occupied grid cell
        
         if (ids.size() < 2) continue;
 
         for (size_t a = 0; a < ids.size(); ++a) { // Generate all unique pairs within this cell
             for (size_t b = a + 1; b < ids.size(); ++b) {
+                
                 int i = ids[a];
                 int j = ids[b];
 
@@ -78,6 +78,7 @@ inline std::vector<std::pair<int,int>> buildPairsFromAABBs(const std::vector<AAB
                     // Only emit pair once across all cells
                     pairs.push_back({i, j});
                 }
+
             }
         }
 
