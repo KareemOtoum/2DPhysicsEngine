@@ -13,7 +13,7 @@
 namespace partioning {
 
 struct GridConfig {
-    float cellSize = 2.0f; // Size of each grid cell 
+    float cellSize = 3.0f; // Size of each grid cell 
 };
 
 // Packs 2D cell coords into one 64-bit key
@@ -63,7 +63,7 @@ inline std::vector<std::pair<int,int>> buildPairsFromAABBs(const std::vector<AAB
     std::vector<std::pair<int,int>> pairs;
     pairs.reserve(aabbs.size() * 4);
 
-    for (auto& [key, ids] : buckets) {    // Iterate over each occupied grid cell
+    for (auto& [key, ids] : buckets) {  // Iterate over each occupied grid cell
        
         if (ids.size() < 2) continue;
 
@@ -78,6 +78,7 @@ inline std::vector<std::pair<int,int>> buildPairsFromAABBs(const std::vector<AAB
                     // Only emit pair once across all cells
                     pairs.push_back({i, j});
                 }
+                
             }
         }
 

@@ -71,6 +71,10 @@ struct Vec2{
         return std::sqrt(x*x + y*y);
     }
 
+    float lengthSquared() const{
+        return (x*x + y*y);
+    }
+
     // Get unit vector and avoid division by zero
     Vec2 normalise() const{ 
         float len=length();

@@ -143,7 +143,7 @@ bool SATLoop(const RigidBody& A,const RigidBody& B,float& penetration,Vec2& norm
         projectAxis(verticesA,normalAxis,maxA,minA);
         projectAxis(verticesB,normalAxis,maxB,minB);
       
-        if (maxA <= minB || maxB <= minA) { // A gap was found, so there the two vertices A and B ( / polygons ) are seperated.
+        if (maxA < minB || maxB < minA) { // A gap was found, so there the two vertices A and B ( / polygons ) are seperated.
             return false;
         }
 
@@ -167,7 +167,7 @@ Manifold SATCollision(RigidBody& RigidBodyA,RigidBody& RigidBodyB) {
     // Returns a Manifold with normal (A->B), penetration depth, and up to two contact points.
     // Preconditions: transformedVertices for both bodies are up-to-date.
 
-    float penetration{1000.0f}; // Will yield as the smallest penetration
+    float penetration = std::numeric_limits<float>::infinity(); // Will yield as the smallest penetration
     Vec2 normal{0.0f,0.0f}; // Will yield as the normal for the smallest penetration
     bool inCollision{true}; // Whether the two objects are in collision or not
 

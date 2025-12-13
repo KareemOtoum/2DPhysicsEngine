@@ -47,11 +47,8 @@ int main(){
     t4.dynamicFriction=0.9;
     t4.staticFriction=0.8;
     t4.restitution=0.2f;
-    t4.linearVelocity=Vec2(20.0f,0.0f);
+    t4.linearVelocity=Vec2(15.0f,0.0f);
     world.getBodies().push_back(t4);
-
-   
-
 
     // Main loop
     gfx.renderLoop();

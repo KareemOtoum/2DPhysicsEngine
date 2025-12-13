@@ -7,8 +7,9 @@
 #include "math/Math.hpp"
 #include "core/Transform.hpp"
 #include "collision/AABB.hpp"
-#include "collision/Partioning.hpp"
+#include "collision/Partitioning.hpp"
 #include <cmath>
+#include <algorithm>
 #include <iostream>
 
 void broadPhase(std::vector<RigidBody>& bodies){ 
@@ -180,8 +181,8 @@ void resolveCollisionFriction(Manifold& manifold){
 
     impulses.reserve(contacts.size());
 
-    float staticFriction=std::sqrt(A.staticFriction*B.staticFriction);
-    float dynamicFriction=std::sqrt(A.dynamicFriction*B.dynamicFriction);
+    float staticFriction=std::min(A.staticFriction,B.staticFriction);
+    float dynamicFriction=std::min(A.dynamicFriction,B.dynamicFriction);
 
     for (auto& contact : contacts){ // Create impulse for each contact point 
 
@@ -215,7 +216,7 @@ void resolveCollisionFriction(Manifold& manifold){
 
         float rADot=vecMath::dot(rA,normal);
         float rBDot=vecMath::dot(rB,normal);
-        float minRestitiution = std::sqrt(A.restitution*B.restitution); // Variable e 
+        float minRestitiution = std::min(A.restitution,B.restitution); // Variable e 
 
         float denominator= (A.inverseMass + B.inverseMass + (rADot*rADot)*A.inverseInertia + (rBDot*rBDot)*B.inverseInertia  ); 
         float j = -(1.0f + minRestitiution) * velAlongNormal;
