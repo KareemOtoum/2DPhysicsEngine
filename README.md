@@ -1,16 +1,4 @@
-2D Physics Engine I've been developing using OpenGL. Set up to work on Polygon-Polygon.
-
-NEW IMPLEMENTATIONS:
-- Friction
-- Spatial partioning
-  
-TODO (Correctness
-- Fix restitution application so bounce is consistent for all collisions, not only cases with significant angular impulse.
-
-TODO (Performance):
-- Add shape-specific collision paths (Circle–Circle, Circle–Polygon, Box–Box) instead of treating everything as generic polygons. 
-
-Demo 
+A custom 2D rigid-body physics engine in C++ with SAT-based convex polygon collision detection, impulse-based resolution with angular dynamics, Coulomb friction modelling, and broad-phase optimisation using AABBs and spatial partitioning.
 
 https://github.com/user-attachments/assets/12808075-fe2f-4803-b852-b403fb83c422
 
