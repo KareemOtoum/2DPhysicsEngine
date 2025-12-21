@@ -2,12 +2,9 @@
 // Transform.hpp, created by Andrew Gossen.
 
 // ------
-// Utility type for 2D rigid transforms (rotation + translation).
+// Holds utility type for 2D rigid transforms (rotation + translation).
 // Used to convert points from local space ( relative to Polygon's COM ) to world space.
-// 
-// Notes:
-// - This is a lightweight value type (NO ownership).
-// - Rotation is in radians.
+// All rotations are in radians.
 // ------
 
 #pragma once 

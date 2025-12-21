@@ -2,16 +2,17 @@
 
 // -----
 // Owns and simulates all rigid bodies in the physics world.
-//
+
 // Ownership & Lifetime:
 // - World owns all RigidBody instances stored in m_bodies.
 // - Bodies are stored by value for cache-friendly iteration.
-// - References/pointers to elements may be invalidated if m_bodies
+// - I havent safeguarded m_bodies, references/pointers to elements may be invalidated if m_bodies
 //   reallocates (e.g., when adding/removing bodies).
-//
-// Simulation Contract:
-// - step(dt) advances the simulation by dt seconds.
-//
+
+// The actual physics simulation :
+// - step(dt) advances the simulation by dt seconds
+//  this dt value is integrated in the step function to advance the simulation.
+
 // Thread Safety:
 // - World is NOT thread-safe.
 // - All access must occur from the physics thread.

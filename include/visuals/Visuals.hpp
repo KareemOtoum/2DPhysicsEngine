@@ -1,22 +1,19 @@
-// Visuals.hpp
+// Visuals.hpp, created by Andrew Gossen.
 
 // ------------------------------------------------------------
-// OpenGL/GLFW rendering wrapper for the physics engine.
-//
+//  OpenGL/GLFW rendering wrapper for the physics engine.
+
 // Ownership & Lifetime:
 // - Visuals owns the GLFWwindow and OpenGL resources (shader, VAO, VBO).
-// - Resources are acquired in the constructor and released in the destructor.
-// - Copying is disabled to prevent double-free of GL resources.
-// - (Optional) Moving may be enabled if needed.
-//
+// - Resources are acquired in the constructor and released in the destructor ( RAII ).
+// - For now copying  is disabled to prevent double-free of GL resources.
+
 // Usage Contract:
-// - renderLoop() assumes a valid GL context on the calling thread.
+// - renderLoop() assumes therei s a valid GL context on the calling thread.
 // - All methods must be called from the same thread that owns the GL context
-//   (GLFW/OpenGL are generally not thread-safe across contexts).
-//
+
 // Error Handling:
-// - If initialization fails, isValid() returns false and window/resources
-//   may be null/zero.
+// - If initialization fails m_ok is false and visuals.cpp returns, GL resources may be nullptr 
 // ------------------------------------------------------------
 
 #pragma once
@@ -31,23 +28,20 @@ public:
 
     Visuals(World& world);
     ~Visuals();
-
+    
     Visuals(const Visuals&) = delete;
     Visuals& operator=(const Visuals&) = delete;
     
     World& world; 
 
-    // If you want move support, implement it carefully in the .cpp:
-    // Visuals(Visuals&&) noexcept;
-    // Visuals& operator=(Visuals&&) noexcept;
-
     bool isValid() const { return m_ok; }
 
-    // Draws a single rigid body using internal VAO/VBO + shader.
+    // Draws a single rigid body using internal VAO/VBO + shader
     // Does not modify physics state.
     void drawRigidBody(const RigidBody& body);
 
-    // Runs the render loop. Blocks until the window closes.
+    // Runs the render loop
+    // Blocks until the window closes
     void renderLoop();
     GLFWwindow* window() const { return m_window; }
 
@@ -76,4 +70,5 @@ private:
 
     float m_zoom = 0.07f;
     bool  m_ok   = false;
+
 };

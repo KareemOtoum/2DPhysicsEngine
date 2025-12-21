@@ -3,21 +3,19 @@
 
 // ---
 // Defines a physics data object representing a single rigid body.
-//
+
 // Ownership & Lifetime:
 // - All RigidBody instances are owned by the World class.
-// - RigidBody does not own external resources.
-// - Dynamic memory usage is limited to internal STL containers,
-//   which are managed via RAII.
-//
-// Invariants:
+// - A RigidBody object does not own external resources.
+
+// Invariants for a RigidBody:
 // - vertices are defined in local space relative to the body's COM.
-// - position and rotation define the authoritative world transform.
-// - transformedVertices are cached world-space vertices derived
-//   from vertices, position, and rotation.
-// - If update == true, transformedVertices MUST be recalculated
-//   to reflect the body's world space ( before they are accessed ).
-//
+// - position and rotation define the authoritative world transform (i.e. the world-space position/rotation )
+// - transformedVertices are cached world-space vertices (world-space vertices represent 
+//.  vertices in their actual location, rather than being relative to the COM )
+// - If update == true, this implies the body has moved, transformedVertices 
+//.  MUST be recached to reflect the body's new position and rotation.
+
 // Thread Safety:
 // - RigidBody is NOT thread-safe.
 // - Instances must only be accessed and mutated from a single thread
@@ -68,17 +66,19 @@ struct RigidBody{
     std::vector<Vec2> transformedVertices {}; // Cached transformed vertices 
     bool update{false}; // Whether the transformed vertices need to be recalculated 
 
-    void move(const Vec2& amount){
+    // Position and rotation incrementing and setting 
+
+    void move(const Vec2& amount){ // Move RigidBooy by amount
         position+=amount;
         update=true;
     }
-
-    void rotate(const float radians){
+    
+    void rotate(const float radians){ // Rotate rigid body by given radians 
         rotation+=radians;
         update=true;
     }
 
-    void snapTo(const Vec2& pos){
+    void snapTo(const Vec2& pos){ // Set RigidBody's position to pos 
         position=pos;
         update=true;
     }

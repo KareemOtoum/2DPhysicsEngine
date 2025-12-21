@@ -3,14 +3,10 @@
 
 // ----- 
 // Lightweight vector2 value type.
-//
+
 // Usage:
 // - Represents positions, velocities, accelerations, forces, etc.
 // - This is a pure value type: no ownership, and no dynamic allocation.
-//
-// Notes:
-// - All operations are inline  and cheap.
-// - Equality is exact floating-point comparison (see notes below).
 // -----
 
 #pragma once
@@ -61,7 +57,7 @@ struct Vec2{
         return *this;
     }
 
-    // Check whether this vector and otherVector are equivalent, won't be used for physics calculations due to floating point precision 
+    // Check whether this vector and otherVector are exactly equivalent 
     bool operator ==(const Vec2& otherVector) const { 
         return ( (x==otherVector.x) && (y==otherVector.y )); 
     }

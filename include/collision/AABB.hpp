@@ -2,13 +2,13 @@
 
 // ---------
 // Axis-Aligned Bounding Box (AABB) utilities for broad-phase collision detection.
-//
+
 // An AABB is a cuboid that encloses a shape, aligned with the co-ordinate axes.
 // Used as a cheap early-out test to evaluate whether two bodies are likely colliding
 // This is used before expensive SAT collision checking.
-//
+
 // Contracts:
-// - getAABB() expects Body.transformedVertices to be up-to-date (world space).
+// - getAABB() requires Body.transformedVertices to be up-to-date (world space).
 // - AABBintersection() treats touching edges as intersection.
 // -------
 

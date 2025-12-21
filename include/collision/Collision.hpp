@@ -3,19 +3,17 @@
 
 // --------
 // Collision detection data structures and narrow-phase queries.
-//
+
 // Ownership & Lifetime:
 // - Manifold stores NON-owning references to two RigidBody instances in collision with each other.
 // - The referenced bodies must outlive the Manifold.
 // - Manifold is intended to be short-lived and used within a single
 //   world step.
-//
-// Conventions:
-// - normal points from A -> B and is unit length when inCollision == true.
-// - penetration is overlap depth along normal (>= 0 when colliding).
-// - contactCount is in [0, 2]. Only contact points up to contactCount
-//   are valid.
-// - Invariant: inCollision == (contactCount > 0).
+
+//  Conventions:
+// - The normal is guaranteed to point from A -> B and is unit length
+// - penetration is the overlap depth along normal (>= 0 when colliding).
+// - 0 <= contactCount <= 2 
 // -----
 
 #pragma once 
