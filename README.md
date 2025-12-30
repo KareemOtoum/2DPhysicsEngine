@@ -3,6 +3,13 @@ This is a custom 2D Rigid-body Physics Engine
 
 Implements convex polygon collision detection via SAT, impulse-based resolution (including rotation and Coulomb friction), and a broadphase pipeline using AABBs + spatial partitioning for performance.
 
+## Features
+- [x] SAT convex polygon collision detection  
+- [x] Impulse resolution with angular dynamics  
+- [x] Coulomb friction (static/dynamic)  
+- [x] Broadphase AABB culling  
+- [x] Spatial partitioning 
+
 
 **Demo Videos**
 ---
