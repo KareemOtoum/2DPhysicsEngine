@@ -62,6 +62,7 @@ Visuals::Visuals(World& world) : world(world){
     }
 
     glfwMakeContextCurrent(m_window);
+    glfwSwapInterval(0); // disable vsync to uncap fps
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
@@ -231,7 +232,6 @@ void Visuals::renderLoop(){
 
     buffer.reserve(2000); // Assuming polygons won't have more than 1000 vertices
 
-    int frameRate=600; // 120 fps desired 
     float lastTime = glfwGetTime();
 
     auto* visuals = static_cast<Visuals*>(glfwGetWindowUserPointer(m_window));
@@ -279,20 +279,24 @@ void Visuals::renderLoop(){
         glfwSwapBuffers(m_window);
         glfwPollEvents();
 
+        static double last = glfwGetTime();
+        static double acc  = 0.0;
+
         double now = glfwGetTime();
-        double dt = now - lastTime; // Calculate elapsed time from last frame for the dt value in world step 
-        lastTime = now;
-        world.step(static_cast<float>(dt));
+        double frameDt = now - last;
+        last = now;
 
-        // Limit FPS to be at most fameRate 
-        double frameEnd = glfwGetTime();
-        double frameDuration = frameEnd - frameStart;
-        double sleepTime = (1/frameRate) - frameDuration;
+        // clamp so debugger pauses / hitches don't explode the sim
+        if (frameDt > 0.25) frameDt = 0.25;
 
-        if (sleepTime > 0.0) {
-            std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+        acc += frameDt;
+
+        constexpr double fixedDt = 1.0 / 120.0;   // choose 60 or 120
+        while (acc >= fixedDt) {
+            world.step((float)fixedDt);
+            acc -= fixedDt;
         }
-
+        
         auto nowReport = clock::now();
         double secs = std::chrono::duration<double>(nowReport - lastReport).count();
 

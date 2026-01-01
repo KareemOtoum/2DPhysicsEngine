@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <iostream>
 
-std::pair<bool,bool> broadPhase(std::vector<RigidBody>& bodies){ 
+std::pair<bool,bool> broadPhase(std::vector<RigidBody>& bodies,WorldStats& m_stats){ 
     
     // Broad-phase collision detection, returns whether the narrow phase was reached.
     // - Generates close candidate pairs (i,j) using AABBS and spatial partioning, where i and j are close in world-space.
@@ -41,6 +41,8 @@ std::pair<bool,bool> broadPhase(std::vector<RigidBody>& bodies){
 
     for (auto [i,j] : pairs) { // Go through each canditate pair, i.e. i and j are close 
        
+        m_stats.broadChecks++;
+
         RigidBody& A = bodies[i];
         RigidBody& B = bodies[j];
 
@@ -49,8 +51,8 @@ std::pair<bool,bool> broadPhase(std::vector<RigidBody>& bodies){
         // Do a final cheap check to ensure their AABBS are overlapping before running an SAT test 
         if (!AABBintersection(aabbs[i], aabbs[j])) continue;
         // At this point, it is very likely they are in collision, so we can run expensive SAT tests
-        narrowReached=true;
-        inCollision=narrowPhase(A, B);
+        narrowPhase(A, B, m_stats);
+        m_stats.narrowChecks++;
 
     }
 
@@ -90,8 +92,7 @@ void World::step(float dt){
     );
 
     for (int i = 0; i < solverIterations; ++i) {
-        auto [narrowPhaseReached,colliding]=broadPhase(m_bodies);
-        m_stats.broadChecks++;
+        auto [narrowPhaseReached,colliding]=broadPhase(m_bodies,m_stats);
         m_stats.narrowChecks+=(int)narrowPhaseReached;
         m_stats.contactsResolved+=(int)colliding;
     }
@@ -105,7 +106,6 @@ struct impulseManifold{ // Used to store impulses to apply all impulses only onc
     Vec2 rA;
     Vec2 rB;
 };
-
 
 void resolveCollision(Manifold& manifold){
 
@@ -221,7 +221,7 @@ void resolveCollision(Manifold& manifold){
 };
 
 
-bool narrowPhase(RigidBody& A, RigidBody& B){  
+bool narrowPhase(RigidBody& A, RigidBody& B,WorldStats& m_stats){  
     
     // Narrow-phase collision detection and resolution for a candidate body pair, return whether a collision was resolved 
     // ( i.e. whether there was actually a collision)
@@ -238,6 +238,7 @@ bool narrowPhase(RigidBody& A, RigidBody& B){
     if (!m.inCollision) return false; // Two objects are not colliding. we can stop here
 
     resolveCollision(m); // At this point, the two objects are colliding, so we must resolve the collision
+    m_stats.contactsResolved++;
 
     // Apply position correction afterwards to seperate the two objects.
 

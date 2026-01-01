@@ -43,4 +43,4 @@ class World{
 };
 
 // The narrow phase for collision checking, using an expensive but definitive SAT test.
-bool narrowPhase(RigidBody& A,RigidBody& B); 
+bool narrowPhase(RigidBody& A,RigidBody& B, WorldStats& m_stats); 

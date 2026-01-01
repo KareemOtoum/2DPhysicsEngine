@@ -39,7 +39,7 @@ int main(){
     floor2.restitution=1.0f;
     world.getBodies().push_back(floor2);
 
-    for (int i=0;i<25;i++){
+    for (int i=0;i<50;i++){
         int test=10;
         RigidBody t4(4,1.0,2.0);
         t4.snapTo(Vec2(-20,i/50.0f));   
@@ -52,7 +52,6 @@ int main(){
         world.getBodies().push_back(t4);
     }
 
-    
     // Main loop
     gfx.renderLoop();
     
