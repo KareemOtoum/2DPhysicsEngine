@@ -321,10 +321,6 @@ void Visuals::renderLoop(){
         
     }
 
-    glDeleteVertexArrays(1, &m_vao);
-    glDeleteBuffers(1, &m_vbo);
-    glDeleteProgram(m_shaderProgram);
-    glfwTerminate();
     glfwPollEvents();
 
 };

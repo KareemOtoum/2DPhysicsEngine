@@ -11,6 +11,20 @@ Implements convex polygon collision detection via SAT, impulse-based resolution 
 - [x] Spatial partitioning 
 
 
+## Installation
+Clone the repository
+```bash
+git clone --recurse-submodules https://github.com/AndrewGossenPerez/2DPhysicsEngine.git
+mkdir build
+cd build
+cmake ..
+make
+```
+If you've already cloned without submodules
+```bash 
+git submodule update --init --recursive
+```
+
 **Demo Videos**
 ---
 
